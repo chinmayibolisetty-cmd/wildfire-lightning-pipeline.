@@ -120,6 +120,30 @@ Without the lightning filter, precision is 23%.
 - **48 h is the sweet spot.** Going from 24 h to 48 h raises recall without losing precision. Longer windows add little recall and lower precision, so most lightning fires were detected within two days.
 - **5 km and 10 km are about tied.** The differences in F1 (0.23 vs 0.24–0.25) amount to a few fires out of 242. We keep **D = 5 km, T = 48 h** as the default, because it also scored best against the chance baseline (1.50x vs 1.29x for 10 km). D = 10 km is an equally good alternative.
 
+### Largest recorded lightning fires
+
+`named_fires.py` checks the 15 largest FPA FOD lightning fires discovered Aug 15–22, 2020 (same 5 km / 2 day rule as `validate.py`). Full table in `named_fires.csv`.
+
+| Fire | Complex | Discovered | Acres | Seen as new fire | Lightning-matched |
+|---|---|---|---|---|---|
+| Doe | August | Aug 16 | 589,368 | yes | yes |
+| Hopkins | August | Aug 17 | 328,363 | yes | no |
+| Claremont | North | Aug 17 | 318,776 | yes | no |
+| Hennessey | LNU Lightning | Aug 17 | 305,651 | yes | yes |
+| Castle | SQF | Aug 19 | 174,178 | no | no |
+| W-5 Cold Springs | | Aug 18 | 84,817 | yes | yes |
+| Wallbridge | LNU Lightning | Aug 17 | 55,209 | yes | yes |
+| SHF Elkhorn | August | Aug 18 | 51,577 | yes | yes |
+| Dome | | Aug 15 | 43,273 | yes | no |
+| Sheep | North | Aug 17 | 29,570 | yes | yes |
+| Glade | August | Aug 19 | 26,197 | yes | no |
+| Tatham | August | Aug 16 | 14,457 | no | no |
+| Hull | August | Aug 19 | 12,284 | yes | yes |
+| Bear | North | Aug 17 | 12,154 | yes | yes |
+| Rattlesnake | | Aug 16 | 8,419 | no | no |
+
+12 of the 15 largest fires were seen as new fires, and 8 were matched to lightning. Those 8 cover 1.14 million of the 2.05 million acres (56%).
+
 ### Streaming pipeline and benchmarks
 
 The Spark streaming job matched **the same 65 new fires as the pandas prototype (100% agreement)** at every replay speed.
@@ -174,6 +198,7 @@ The processed data files (`firms_aug2020.csv`, `glm_aug2020.csv`, `fpa_fod_ca_li
 | 4. Matching | `python match_prototype.py --d-km 5 --t-hours 48 --new-km 5` | seconds | `new_fires.csv`, `fire_flash_matches.csv` |
 | 5. Tuning | `python tune.py` | ~10 min | `tuning_results.csv` |
 | 6. Validation | `python validate.py` | seconds | `validation_fires.csv` |
+| 6c. Largest-fire check | `python named_fires.py` | seconds | `named_fires.csv` |
 | 6b. Precision/recall sweep | `python pr_sweep.py` | ~1 min | `pr_sweep.csv`, `pr_tradeoff.png` |
 | 7. Streaming benchmarks | `bash bench.sh` (needs Docker running) | ~12 min | `benchmark_results.csv` |
 | 7b. MongoDB queries | `docker compose up -d mongodb`, then `python mongo_bench.py` | ~1 min | `mongo_benchmark.csv` |
