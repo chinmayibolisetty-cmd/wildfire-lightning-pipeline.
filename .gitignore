@@ -1,0 +1,30 @@
+# Large raw downloads (re-create with the get_*.py scripts, see README)
+fpa_fod/
+fpa_fod.zip
+*.sqlite
+*.gpkg
+glm_day*.csv
+glm_6hour_sample.csv
+
+# Temporary files made by baseline.py / tune.py
+glm_shuffled.csv
+glm_shift*.csv
+
+# Benchmark logs (results are kept in benchmark_results.csv)
+spark_log_*.txt
+replay_log_*.txt
+compare_log_*.txt
+
+# Spark test output
+stream_in/
+stream_out/
+
+# Misc
+docker-compose.backup.yml
+__pycache__/
+.ipynb_checkpoints/
+.DS_Store
+.env
+
+# Zipped downloads
+*.zip

@@ -1,0 +1,4 @@
+index,index_build_s,median_query_ms,p95_query_ms,total_s,avg_docs_examined,fires_matched
+No index (full scan),0.0,36.64,41.03,4.67,60803,65
+2dsphere on location,0.17,0.57,0.72,0.08,10,65
+2dsphere + flash_time,0.17,0.56,0.7,0.08,6,65

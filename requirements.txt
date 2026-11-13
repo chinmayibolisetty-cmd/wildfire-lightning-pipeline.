@@ -1,0 +1,11 @@
+pandas
+numpy
+scipy
+s3fs
+xarray
+netCDF4
+h5netcdf
+pymongo
+kafka-python
+matplotlib
+notebook

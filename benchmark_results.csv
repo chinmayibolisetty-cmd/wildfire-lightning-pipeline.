@@ -1,0 +1,4 @@
+replay_speed,events,replay_time_s,producer_events_per_s,spark_peak_events_per_s,new_fires_matched,agreement,latency_median_s,latency_p95_s
+"3,600x",92594,188.8,490,14734,65,100%,3.6,4.0
+"36,000x",92594,18.9,4887,24882,65,100%,3.3,4.7
+max,92594,6.1,15215,28809,65,100%,6.7,7.3
