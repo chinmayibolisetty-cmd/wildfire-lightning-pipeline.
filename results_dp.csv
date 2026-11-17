@@ -1,0 +1,11 @@
+epsilon,release,n_counts,mean_true,mean_abs_error,rel_error_pct,rel_error_small_counts_pct
+0.1,per day,7,9.29,7.55,81.3,384.2
+0.1,per 1-degree cell,22,2.95,6.17,208.7,394.9
+0.5,per day,7,9.29,1.81,19.5,98.5
+0.5,per 1-degree cell,22,2.95,1.59,53.8,102.4
+1.0,per day,7,9.29,0.92,9.9,53.5
+1.0,per 1-degree cell,22,2.95,0.86,29.0,58.0
+2.0,per day,7,9.29,0.42,4.6,28.0
+2.0,per 1-degree cell,22,2.95,0.42,14.1,28.7
+5.0,per day,7,9.29,0.08,0.9,4.9
+5.0,per 1-degree cell,22,2.95,0.08,2.7,5.7

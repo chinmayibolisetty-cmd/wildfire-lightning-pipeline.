@@ -1,0 +1,5 @@
+method,target_fp,bits,k,memory_kb,new_fires,us_per_event,agree_with_prototype,missed_vs_set
+Exact Python set (same cell keys),-,,,362.3,139,5.0,139,
+Bloom filter,0.01,41782.0,7.0,5.1,125,26.9,125,14.0
+Bloom filter,0.001,62672.0,10.0,7.7,138,30.5,138,1.0
+Bloom filter,0.0001,83563.0,13.0,10.2,139,34.3,139,0.0

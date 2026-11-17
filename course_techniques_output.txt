@@ -1,0 +1,82 @@
+Loaded 41,647 detections, 60,803 flashes, 159 new fires, 242 FPA FOD fires
+
+======================================================================
+1. BLOOM FILTER: new-fire detection in one streaming pass
+======================================================================
+                           method target_fp    bits    k  memory_kb  new_fires  us_per_event  agree_with_prototype  missed_vs_set
+Exact Python set (same cell keys)         -     NaN  NaN      362.3        139           5.0                   139            NaN
+                     Bloom filter      0.01 41782.0  7.0        5.1        125          26.9                   125           14.0
+                     Bloom filter     0.001 62672.0 10.0        7.7        138          30.5                   138            1.0
+                     Bloom filter    0.0001 83563.0 13.0       10.2        139          34.3                   139            0.0
+
+Prototype (exact k-d tree, 5 km radius) found 159 new fires.
+Each event does 200 lookups, so the per-event false-positive chance is roughly that many times the target rate.
+A Bloom filter never misses a key it has seen, so a false positive can only turn a new fire into 'not new' (missed_vs_set).
+
+======================================================================
+2. FLAJOLET-MARTIN: distinct 1-km cells struck by lightning per day
+======================================================================
+       day  flashes  exact_distinct_cells  fm_estimate  rel_error_pct
+2020-08-15     5341                  3576         3560           -0.4
+2020-08-16    15894                 11482        12563            9.4
+2020-08-17    16489                 11414        12563           10.1
+2020-08-18     8127                  5508         4409          -20.0
+2020-08-19    13400                  8114         8467            4.4
+2020-08-20     1552                   894          967            8.2
+
+Mean absolute relative error: 8.8%  |  memory: 64 small counters vs a set of up to 11,482 cell ids
+
+======================================================================
+3. LOCALITY SENSITIVE HASHING (p-stable, Euclidean) vs exact search
+======================================================================
+Exact (k-d tree): 65 new fires matched, 647 fire-flash pairs
+ k  L  avg_candidates  pct_of_all_flashes  pair_recall_pct  fire_recall_pct  build_s  query_ms
+ 1  1             613                1.01             69.7             98.5     0.07      0.14
+ 1  2            2127                3.50             97.5             98.5     0.17      0.31
+ 1  4            2427                3.99             99.7            100.0     0.20      0.30
+ 1  8            5646                9.29            100.0            100.0     0.38      0.75
+ 1 16           15262               25.10            100.0            100.0     0.84      2.25
+ 2  1              59                0.10             57.7             90.8     0.06      0.03
+ 2  2              19                0.03             87.3             96.9     0.11      0.02
+ 2  4             107                0.18             96.4            100.0     0.24      0.05
+ 2  8             399                0.66             99.4            100.0     0.46      0.10
+ 2 16             323                0.53            100.0            100.0     0.89      0.17
+
+Bucket width w = 10 km. Brute force would compare every fire with all 60,803 flashes.
+
+======================================================================
+4. DIFFERENTIAL PRIVACY: Laplace mechanism on released counts
+======================================================================
+Released statistics: lightning-attributed new fires per DAY and per 1-degree CELL.
+Sensitivity = 1 (adding or removing one fire changes one count by 1), noise ~ Laplace(1/epsilon).
+ epsilon           release  n_counts  mean_true  mean_abs_error  rel_error_pct  rel_error_small_counts_pct
+     0.1           per day         7       9.29            7.55           81.3                       384.2
+     0.1 per 1-degree cell        22       2.95            6.17          208.7                       394.9
+     0.5           per day         7       9.29            1.81           19.5                        98.5
+     0.5 per 1-degree cell        22       2.95            1.59           53.8                       102.4
+     1.0           per day         7       9.29            0.92            9.9                        53.5
+     1.0 per 1-degree cell        22       2.95            0.86           29.0                        58.0
+     2.0           per day         7       9.29            0.42            4.6                        28.0
+     2.0 per 1-degree cell        22       2.95            0.42           14.1                        28.7
+     5.0           per day         7       9.29            0.08            0.9                         4.9
+     5.0 per 1-degree cell        22       2.95            0.08            2.7                         5.7
+
+======================================================================
+5. DATA POISONING: injected fake flashes vs attribution precision
+======================================================================
+ poison_rate        rule  flagged  precision_pct
+        0.00 >=1 flashes     65.0           38.5
+        0.00 >=3 flashes     49.0           38.8
+        0.10 >=1 flashes     75.7           34.8
+        0.10 >=3 flashes     51.3           39.0
+        0.25 >=1 flashes     85.0           32.6
+        0.25 >=3 flashes     51.3           39.0
+        0.50 >=1 flashes     99.0           29.7
+        0.50 >=3 flashes     55.0           36.4
+        1.00 >=1 flashes    117.3           27.0
+        1.00 >=3 flashes     71.7           34.4
+
+poison_rate = fake flashes as a fraction of the real flash count, spread uniformly over the area and time.
+Precision uses the same rule as validate.py (FPA FOD fire within 5 km and 2 days); small differences are possible.
+
+Done. Paste everything above into the chat so the report can be updated.
