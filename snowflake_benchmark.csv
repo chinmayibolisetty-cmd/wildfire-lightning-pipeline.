@@ -1,0 +1,3 @@
+query,run1_ms,run2_ms,run3_ms,median_total_ms,median_exec_ms,fires_matched,warehouse
+all_fires_join,521,639,248,521,120,65,X-Small
+single_fire_lookup,281,431,346,346,107,,X-Small
