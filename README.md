@@ -222,7 +222,7 @@ python compare_stream.py                      # after Spark finishes
 
 1. **Detect new fires inside the stream**. Today Spark matches *every* fire detection to lightning, and the "new fire" filter is applied afterwards in batch (`compare_stream.py`). Moving it into the stream is the main remaining engineering task. Options from our proposal: a geohash/H3 grid cell plus date key kept in Spark state, a time-bucketed Bloom filter, or a MongoDB `$near` lookup inside `foreachBatch`. Test with `compare_stream.py`: the result should still be 65 new fires.
 2. ~~MongoDB geospatial queries~~ ✅ Done (`mongo_bench.py`, results above). These query times are the baseline for the Snowflake comparison.
-3. **Snowflake comparison**. Load the same CSVs into Snowflake, run the equivalent spatial-temporal query (e.g. `ST_DWITHIN`), and compare query time and cost with MongoDB (see `mongo_benchmark.csv`).
+3. ~~**Snowflake comparison**~~ ✅ Done (`snowflake_queries.sql`, `snowflake_benchmark.csv`). `ST_DWITHIN` on an X-Small warehouse matched the same 65 fires; one join over all fires took 521 ms (median) vs 0.08 s for MongoDB's indexed per-fire queries and 4.67 s without an index. A single-fire lookup took 346 ms vs 0.57 ms in MongoDB.
 4. ~~**Kafka producers**~~ ✅ Done. `replay_producer.py` replays our CSVs into the `glm-flashes` and `firms-fires` topics (3 partitions each); reproduced and benchmarked at 3,600x, 36,000x and max speed with 100% agreement.
 5. **Broader evaluation** (all). Extend beyond Aug 15–22, add NIFC fire perimeters as a second ground truth, and check famous fires (August, LNU, SCU, CZU complexes) in `validation_fires.csv`.
 6. **Final report and slides** (all), due Nov 17.
