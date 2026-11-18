@@ -6,7 +6,7 @@ A data pipeline that links satellite lightning observations to new wildfire dete
 - **Fires:** NASA FIRMS VIIRS (S-NPP) active-fire detections
 - **Ground truth:** USDA Forest Service FPA FOD, 6th edition (1992–2020), and CAL FIRE fire perimeters (2020)
 - **Stack:** Kafka (KRaft) → Spark Structured Streaming → MongoDB, all in Docker Compose; Snowflake for the warehouse comparison
-- **Project board:** [Trello](https://trello.com/b/LEu9Qd2D/wildfire-lightning-pipeline-data-228)
+- **Project board:** [Trello](https://trello.com/b/LEu9Qd2D/wildfire-lightning-pipeline-data-226)
 
 **See [`results.ipynb`](results.ipynb) for charts and tables of every result below.**
 

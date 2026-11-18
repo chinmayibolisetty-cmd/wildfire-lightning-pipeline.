@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-DATA 228 course techniques added to the wildfire-lightning pipeline.
+DATA 226 course techniques added to the wildfire-lightning pipeline.
 
   1. Bloom filter        - streaming new-fire detection in constant memory
   2. Flajolet-Martin     - approximate count of distinct lightning-struck cells per day
