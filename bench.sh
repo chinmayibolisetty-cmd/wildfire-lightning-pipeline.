@@ -5,20 +5,25 @@
 cd "$(dirname "$0")"
 PKGS=org.apache.spark:spark-sql-kafka-0-10_2.12:3.5.3,org.mongodb.spark:mongo-spark-connector_2.12:10.4.0
 SPEEDS=${SPEEDS:-"3600 36000 0"}   # 0 = as fast as possible
+TOPICS="glm-flashes firms-fires new-fires"
+
+# The in-stream new-fire detector (applyInPandasWithState) needs pandas + pyarrow in the Spark container.
+docker exec spark python3 -c "import pandas, pyarrow" 2>/dev/null || \
+  docker exec spark pip3 install -q "numpy<2" "pandas<2.3" "pyarrow<15"
 
 for SPEED in $SPEEDS; do
   echo; echo "########## Speed ${SPEED}x (0 = max) ##########"
-  for t in glm-flashes firms-fires; do
+  for t in $TOPICS; do
     docker exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --delete --topic $t >/dev/null 2>&1
   done
   sleep 15
-  for t in glm-flashes firms-fires; do
+  for t in $TOPICS; do
     docker exec kafka /opt/kafka/bin/kafka-topics.sh --bootstrap-server localhost:9092 --create --if-not-exists --topic $t --partitions 3 --replication-factor 1 >/dev/null
   done
-  docker exec mongodb mongosh wildfire --quiet --eval "db.stream_matches.drop()" >/dev/null
+  docker exec mongodb mongosh wildfire --quiet --eval "db.stream_matches.drop(); db.stream_new_fires.drop()" >/dev/null
   docker exec spark rm -rf /tmp/spark_chk
 
-  if [ "$SPEED" = "3600" ]; then RUN=280; else RUN=120; fi
+  if [ "$SPEED" = "3600" ]; then RUN=300; else RUN=150; fi
   docker exec spark /opt/spark/bin/spark-submit --packages $PKGS --conf spark.jars.ivy=/tmp/.ivy2 \
     spark_match.py --run-seconds $RUN > spark_log_$SPEED.txt 2>&1 &
   SPARK_PID=$!
@@ -51,7 +56,7 @@ def grab(path, pattern):
 
 rows = []
 for s in sys.argv[1].split():
-    lat = re.search(r"latency.*?:\s+([\d.]+) s / ([\d.]+) s", open(f"compare_log_{s}.txt").read()) \
+    lat = re.search(r"End-to-end latency.*?:\s+([\d.]+) s / ([\d.]+) s", open(f"compare_log_{s}.txt").read()) \
         if grab(f"compare_log_{s}.txt", r"(Agreement)") else None
     rows.append({
         "replay_speed": "max" if s == "0" else f"{int(s):,}x",
@@ -59,10 +64,13 @@ for s in sys.argv[1].split():
         "replay_time_s": grab(f"replay_log_{s}.txt", r"Wall time:\s+([\d.]+)"),
         "producer_events_per_s": grab(f"replay_log_{s}.txt", r"Throughput:\s+([\d,]+)"),
         "spark_peak_events_per_s": grab(f"spark_log_{s}.txt", r"Peak processing rate:\s+([\d,]+)"),
+        "new_fires_detected": grab(f"compare_log_{s}.txt", r"New fires detected by Spark:\s+([\d,]+)"),
+        "new_fire_agreement": grab(f"compare_log_{s}.txt", r"New-fire agreement:.*\((\d+%)\)"),
         "new_fires_matched": grab(f"compare_log_{s}.txt", r"New fires matched by Spark:\s+([\d,]+)"),
         "agreement": grab(f"compare_log_{s}.txt", r"Agreement:.*\((\d+%)\)"),
         "latency_median_s": lat.group(1) if lat else "",
         "latency_p95_s": lat.group(2) if lat else "",
+        "detect_latency_median_s": grab(f"compare_log_{s}.txt", r"detection latency.*?:\s+([\d.]+) s"),
     })
 df = pd.DataFrame(rows)
 df.to_csv("benchmark_results.csv", index=False)

@@ -1,0 +1,4 @@
+window,fod_fires,fod_fires_10plus_acres,new_fires,new_fires_with_glm,lightning_matched,precision_all,precision_lightning,recall_all,recall_lightning,recall_all_10plus,recall_lightning_10plus,match_rate_with_glm,f1_all,f1_lightning
+Aug 15-Aug 22 (original),242,60,139,115,65,0.23,0.385,0.19,0.161,0.483,0.367,0.452,0.208,0.227
+Aug 15-Aug 25 (extended),268,65,159,135,70,0.22,0.386,0.183,0.153,0.477,0.369,0.422,0.2,0.219
+Aug 23-25 (new days only),26,5,20,20,5,0.15,0.4,0.115,0.077,0.4,0.4,0.25,0.13,0.129

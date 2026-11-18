@@ -18,6 +18,8 @@ compare_log_*.txt
 # Spark test output
 stream_in/
 stream_out/
+stream_out_new_fires/
+stream_out_new_fires_table/
 
 # Misc
 docker-compose.backup.yml
@@ -28,3 +30,4 @@ __pycache__/
 
 # Zipped downloads
 *.zip
+.ven/v
