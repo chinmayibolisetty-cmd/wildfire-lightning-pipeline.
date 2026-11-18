@@ -32,7 +32,7 @@ A data pipeline that links satellite lightning observations to new wildfire dete
 | Snowflake load + MongoDB vs Snowflake comparison | ✅ Done | `snowflake_queries.sql` |
 | Course techniques (Bloom filter, Flajolet–Martin, LSH, differential privacy, data poisoning) | ✅ Done | `course_techniques.py` |
 | Broader evaluation (Aug 15–25, fire perimeters, famous complexes) | ✅ Done | `broad_eval.py`, `get_nifc.py` |
-| Final report and slides | 🟡 Drafted; team details and final edits in progress | — |
+|Final report and slides | ✅ Done | report/ |
 
 ---
 
