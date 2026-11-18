@@ -1,4 +1,4 @@
-replay_speed,events,replay_time_s,producer_events_per_s,spark_peak_events_per_s,new_fires_matched,agreement,latency_median_s,latency_p95_s
-"3,600x",92594,188.8,490,14734,65,100%,3.6,4.0
-"36,000x",92594,18.9,4887,24882,65,100%,3.3,4.7
-max,92594,6.1,15215,28809,65,100%,6.7,7.3
+replay_speed,events,replay_time_s,producer_events_per_s,spark_peak_events_per_s,new_fires_detected,new_fire_agreement,new_fires_matched,agreement,latency_median_s,latency_p95_s,detect_latency_median_s
+"3,600x",92594,188.8,490,16405,139,100%,65,100%,7.5,9.4,3.7
+"36,000x",92594,19.0,4880,25669,139,100%,65,100%,7.5,9.2,3.8
+max,92594,2.7,34453,30959,139,100%,65,100%,7.1,7.6,5.3
