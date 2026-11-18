@@ -1,3 +1,11 @@
+-- Snowflake comparison for the wildfire-lightning pipeline.
+-- Before running: load the repo's CSVs into WILDFIRE.PIPELINE
+--   glm_aug2020.csv -> table GLM        (columns FLASH_TIME, LAT, LON, ENERGY, AREA)
+--   new_fires.csv   -> table NEW_FIRES  (uses columns TIME, LATITUDE, LONGITUDE)
+-- e.g. in Snowsight: Data > Add Data > Load data into a table (header row, comma-delimited).
+-- Cost: an X-Small warehouse uses 1 credit per hour, billed per second with a 60 s minimum
+-- each time it resumes; set AUTO_SUSPEND low so it stops when idle.
+
 USE ROLE ACCOUNTADMIN;
 USE WAREHOUSE COMPUTE_WH;
 CREATE DATABASE IF NOT EXISTS WILDFIRE;

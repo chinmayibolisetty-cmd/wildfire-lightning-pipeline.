@@ -4,8 +4,9 @@ A data pipeline that links satellite lightning observations to new wildfire dete
 
 - **Lightning:** NOAA GOES-17 Geostationary Lightning Mapper (GLM)
 - **Fires:** NASA FIRMS VIIRS (S-NPP) active-fire detections
-- **Ground truth:** USDA Forest Service FPA FOD, 6th edition (1992–2020)
-- **Stack:** Kafka (KRaft) → Spark Structured Streaming → MongoDB, all in Docker Compose
+- **Ground truth:** USDA Forest Service FPA FOD, 6th edition (1992–2020), and CAL FIRE fire perimeters (2020)
+- **Stack:** Kafka (KRaft) → Spark Structured Streaming → MongoDB, all in Docker Compose; Snowflake for the warehouse comparison
+- **Project board:** [Trello](https://trello.com/b/LEu9Qd2D/wildfire-lightning-pipeline-data-228)
 
 **See [`results.ipynb`](results.ipynb) for charts and tables of every result below.**
 
@@ -16,9 +17,10 @@ A data pipeline that links satellite lightning observations to new wildfire dete
 | Component | Status | Main script(s) |
 |---|---|---|
 | Infrastructure (Kafka, MongoDB, Spark in Docker) | ✅ Done | `docker-compose.yml` |
-| Data: GLM lightning, Aug 15–20, 2020 | ✅ Done | `get_glm.py` |
+| Data: GLM lightning, Aug 15–25, 2020 | ✅ Done | `get_glm.py` |
 | Data: FIRMS fire detections, Aug 8–25, 2020 | ✅ Done | `get_firms.py` |
 | Data: FPA FOD ground truth (CA, 2019–2020) | ✅ Done | `get_fpa_fod.py` |
+| Data: CAL FIRE fire perimeters (CA, 2020) | ✅ Done | `get_nifc.py` |
 | Matching prototype (pandas) | ✅ Done | `match_prototype.py` |
 | Chance baseline + parameter tuning | ✅ Done | `baseline.py`, `tune.py` |
 | Validation against FPA FOD | ✅ Done | `validate.py` |
@@ -28,8 +30,9 @@ A data pipeline that links satellite lightning observations to new wildfire dete
 | New-fire detection *inside* the stream | ✅ Done | `new_fire_state.py`, `spark_match.py`, `test_new_fire_state.py` |
 | MongoDB geospatial query benchmarks | ✅ Done | `mongo_bench.py` |
 | Snowflake load + MongoDB vs Snowflake comparison | ✅ Done | `snowflake_queries.sql` |
-| Broader evaluation (Aug 15–25, fire perimeters, famous complexes) | 🟡 FPA FOD and GLM parts done; perimeter download pending | `broad_eval.py`, `get_nifc.py` |
-| Final report and slides | ⬜ To do | — |
+| Course techniques (Bloom filter, Flajolet–Martin, LSH, differential privacy, data poisoning) | ✅ Done | `course_techniques.py` |
+| Broader evaluation (Aug 15–25, fire perimeters, famous complexes) | ✅ Done | `broad_eval.py`, `get_nifc.py` |
+| Final report and slides | 🟡 Drafted; team details and final edits in progress | — |
 
 ---
 
@@ -61,7 +64,7 @@ flowchart LR
 
 ---
 
-## Results so far
+## Results
 
 ### Data
 
@@ -69,7 +72,9 @@ flowchart LR
 |---|---|---|
 | FIRMS VIIRS detections | Aug 8–25, 2020 | 44,022 (41,647 nominal/high confidence) |
 | GLM flashes over California | Aug 15–20, 2020 | 60,803 (from 25,920 twenty-second files) |
+| GLM flashes over California (extension) | Aug 21–25, 2020 | 36,948 (822 / 1,825 / 6,910 / 12,405 / 14,986 per day) |
 | FPA FOD natural-cause fires, CA | 2019–2020 | 1,096 (271 discovered Aug 15–26, 2020) |
+| CAL FIRE fire perimeters, CA | 2020 | 503 (51 lightning fires that started Aug 13–27, 18 of them 1,000+ acres) |
 
 FIRMS detections jumped more than tenfold when the siege began: 2,718 for Aug 13–17, then 31,653 for Aug 18–22.
 
@@ -183,7 +188,20 @@ Without the lightning filter, precision is 23%.
 
 FPA FOD has **no records for the SCU or CZU complexes**, even though they were two of the largest fires of the siege. The few FPA FOD points in those areas are small, unnamed state fires. Checking those two complexes needs fire perimeters (below).
 
-**Perimeters (second ground truth): still to do.** The NIFC "InterAgencyFirePerimeterHistory" layer returned only 12 small 2020 California perimeters, mostly USFS, the largest 31,903 acres (Apple fire), and none of the siege complexes. That layer's 2020 California data is incomplete, so `get_nifc.py` now downloads CAL FIRE's "California Fire Perimeters (all)" by default. It covers all agencies and records each fire's cause (1 = lightning) and alarm date, so lightning fires and their start dates come straight from the record. Run `python get_nifc.py`, then `python broad_eval.py`. `broad_eval.py` warns if a perimeter download looks incomplete.
+**Perimeters (second ground truth).** The NIFC "InterAgencyFirePerimeterHistory" layer returned only 12 small 2020 California perimeters and none of the siege complexes, so `get_nifc.py` downloads CAL FIRE's "California Fire Perimeters (all)" instead (`fire_perimeters_ca2020.geojson`, 503 perimeters for 2020). Each perimeter records its cause (1 = lightning) and alarm date. A pipeline fire counts if it lies inside a perimeter or within 1 km of its edge (`--buffer-km`). Recall is measured on the 18 lightning fires of 1,000+ acres that started Aug 13–27. Full table in `perimeter_results.csv`.
+
+| Aug 15–25 | All new fires | Lightning-matched |
+|---|---|---|
+| Fires flagged | 159 | 70 |
+| Inside any 2020 perimeter | 53% | 77% |
+| Inside a lightning-fire perimeter (precision) | 46% | 76% |
+| Large lightning fires detected (of 18) | 16 (89%) | 14 (78%) |
+| Share of those fires' acres detected | 100% | 96% |
+
+- **The lightning filter works against this ground truth too.** Precision rises from 46% to 76%, the same ~1.7x gain as against FPA FOD. Precision is higher here because a detection anywhere on a fire counts, not just near its recorded point of origin.
+- **Missed large fires:** Rattlesnake (8,309 acres) and Moraine (1,301 acres) were never flagged as new fires.
+- **Famous complexes.** All four were detected and matched to lightning within one to two days of the Aug 16–17 storms: August (16 new fires inside, 13 matched, first on Aug 17 09:17), SCU (9 / 7, Aug 16 20:58), CZU (4 / 3, Aug 16 20:58), and LNU (Hennessey 12 / 7, Walbridge 2 / 2, Meyers 1 / 1, Aug 18). Perimeters are the only ground truth for SCU and CZU.
+- **Caveat.** A perimeter shows a fire's final extent, so a detection inside one may be a new spot on an already-burning fire rather than a separate ignition.
 
 ### Streaming pipeline and benchmarks
 
@@ -211,7 +229,7 @@ Spark used to match *every* detection to lightning, and `compare_stream.py` then
 
 **In Docker (`bench.sh`).** The Spark run confirmed this at all three replay speeds: 139 of 139 new fires and 65 of 65 matches. See the benchmark table under [Streaming pipeline and benchmarks](#streaming-pipeline-and-benchmarks).
 
-### MongoDB geospatial queries
+### MongoDB and Snowflake geospatial queries
 
 For each of the 139 new fires, we asked MongoDB for "GLM flashes within 5 km and the 48 h before this fire" (`$geoWithin` + time range) over 60,803 flashes, with three index setups:
 
@@ -222,6 +240,20 @@ For each of the 139 new fires, we asked MongoDB for "GLM flashes within 5 km and
 | 2dsphere + flash_time | 0.17 | 0.56 | 0.70 | 6 | 65 |
 
 The 2dsphere index made queries about 64x faster and cut the documents examined from 60,803 to 10 per query. Adding time to the index reduced that to 6, but at this data size the speed is about the same. All three setups matched the same 65 fires as the pandas prototype and the Spark stream. Loading the flashes took 0.4 s.
+
+**Snowflake** (`snowflake_queries.sql`, `snowflake_benchmark.csv`; X-Small warehouse, result cache off). The same rule with `ST_DWITHIN` (5,000 m) and a 48 h window matched the same 65 fires. One join over all new fires took 521 ms median (120 ms of execution); a single-fire lookup took 346 ms (107 ms of execution), about 600x slower than an indexed MongoDB lookup. The warehouse suits batch analysis; MongoDB suits per-event lookups inside the stream.
+
+### Course techniques
+
+`course_techniques.py` applies five course techniques to the same data. Full output in `course_techniques_output.txt`; tables in `results_bloom.csv`, `results_fm.csv`, `results_lsh.csv`, `results_dp.csv`, `results_poison.csv`. These run as a time-ordered pass that simulates a stream, not inside Spark.
+
+| Technique | Result |
+|---|---|
+| Bloom filter (new-fire rule) | 10.2 KB vs 362.3 KB for an exact set (36x smaller), all 139 new fires found at a 0.01% target false-positive rate; at 1% it missed 14, because each event does 200 lookups |
+| Flajolet–Martin (distinct 1 km cells struck per day) | 8.8% mean error |
+| p-stable LSH (fire–flash candidates) | k = 2, L = 4: 107 candidates per fire (0.18% of flashes), 100% fire recall, 96.4% pair recall |
+| Laplace differential privacy (released counts) | ε = 1: 9.9% error per day, 29% per cell; ε = 0.1: 81% / 209% |
+| Data poisoning (fake flashes) | Precision falls from 38.5% to 27.0% at 100% poison with a ≥1-flash rule, but stays at 34.4% with a ≥3-flash rule (38.8% clean) |
 
 ---
 
@@ -260,6 +292,8 @@ The processed data files (`firms_aug2020.csv`, `glm_aug2020.csv`, `fpa_fod_ca_li
 | 6b. Precision/recall sweep | `python pr_sweep.py` | ~1 min | `pr_sweep.csv`, `pr_tradeoff.png` |
 | 7. Streaming benchmarks | `bash bench.sh` (needs Docker running) | ~12 min | `benchmark_results.csv` |
 | 7b. MongoDB queries | `docker compose up -d mongodb`, then `python mongo_bench.py` | ~1 min | `mongo_benchmark.csv` |
+| 7c. Snowflake comparison | Load `glm_aug2020.csv` into table `GLM` and `new_fires.csv` into table `NEW_FIRES` (see the comment at the top of the file), then run `snowflake_queries.sql` in a Snowflake worksheet | ~5 min | `snowflake_benchmark.csv` |
+| 7d. Course techniques | `python course_techniques.py > course_techniques_output.txt` | ~2 min | `results_*.csv`, `course_techniques_output.txt` |
 | 8. Results notebook | `jupyter notebook results.ipynb` → Run All | ~1 min | charts and tables |
 
 `tune.py` reruns the matching many times and **overwrites** `new_fires.csv` / `fire_flash_matches.csv`. Rerun step 4 afterwards, before steps 6 and 7.
@@ -284,8 +318,15 @@ Add `--match-all` to the `spark-submit` command to get the old behaviour (match 
 2. ~~MongoDB geospatial queries~~ ✅ Done (`mongo_bench.py`, results above). These query times are the baseline for the Snowflake comparison.
 3. ~~**Snowflake comparison**~~ ✅ Done (`snowflake_queries.sql`, `snowflake_benchmark.csv`). `ST_DWITHIN` on an X-Small warehouse matched the same 65 fires; one join over all fires took 521 ms (median) vs 0.08 s for MongoDB's indexed per-fire queries and 4.67 s without an index. A single-fire lookup took 346 ms vs 0.57 ms in MongoDB.
 4. ~~**Kafka producers**~~ ✅ Done. `replay_producer.py` replays our CSVs into the `glm-flashes` and `firms-fires` topics (3 partitions each); reproduced and benchmarked at 3,600x, 36,000x and max speed with 100% agreement.
-5. 🟡 **Broader evaluation** (all). `broad_eval.py` extends validation to Aug 15–25 with GLM for every day, and checks the August, LNU, SCU and CZU complexes (see [Broader evaluation](#broader-evaluation-aug-1525)). Still to do: the perimeter ground truth. NIFC's 2020 California data was incomplete, so rerun `get_nifc.py`, which now uses CAL FIRE. This is also needed for SCU and CZU, which FPA FOD doesn't record.
-6. **Final report and slides** (all), due Nov 17.
+5. ~~**Broader evaluation**~~ ✅ Done. `broad_eval.py` covers Aug 15–25 against FPA FOD and CAL FIRE perimeters and checks the August, LNU, SCU and CZU complexes (see [Broader evaluation](#broader-evaluation-aug-1525)).
+6. ~~**Course techniques**~~ ✅ Done (`course_techniques.py`).
+7. 🟡 **Final report and slides** (all). Drafted with every result above; team names, CRediT roles and final edits in progress.
+
+### Possible next steps
+
+- Replace the detector's exact per-cell state with the Bloom filter, so memory stays fixed as the stream grows.
+- Spread fire messages over several Kafka partitions without losing the order the new-fire rule depends on.
+- Extend to the full 2020 season and test a proximity index instead of a fixed D and T.
 
 ## Known limitations
 
@@ -293,6 +334,7 @@ Add `--match-all` to the `spark-submit` command to get the old behaviour (match 
 - VIIRS passes over about twice a day, which adds up to ~12 h of delay between ignition and detection.
 - FPA FOD records each fire's point of origin, and complexes are sometimes a single record, so some correct detections are more than 5 km from the recorded point. Precision may be understated.
 - Which pixel of an overpass counts as the "new fire" depends on how ties are broken. The prototype uses pandas' default (unstable) sort. With a stable sort it would find 159 / 140 / **66** instead of 159 / 139 / 65. The fire *clusters* are the same, but a different pixel can sit just inside or outside the 5 km flash radius. The stream copies the prototype's order (`seq`) so the two can be compared exactly.
+- All fire messages share one Kafka key, so they go to a single partition. This keeps them in order but limits parallelism.
 - The latency figures assume the clocks on the host machine and inside Docker are in sync.
 
 ## AI use
