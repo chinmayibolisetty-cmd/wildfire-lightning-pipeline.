@@ -320,7 +320,7 @@ Add `--match-all` to the `spark-submit` command to get the old behaviour (match 
 4. ~~**Kafka producers**~~ ✅ Done. `replay_producer.py` replays our CSVs into the `glm-flashes` and `firms-fires` topics (3 partitions each); reproduced and benchmarked at 3,600x, 36,000x and max speed with 100% agreement.
 5. ~~**Broader evaluation**~~ ✅ Done. `broad_eval.py` covers Aug 15–25 against FPA FOD and CAL FIRE perimeters and checks the August, LNU, SCU and CZU complexes (see [Broader evaluation](#broader-evaluation-aug-1525)).
 6. ~~**Course techniques**~~ ✅ Done (`course_techniques.py`).
-7. 🟡 **Final report and slides** (all). Drafted with every result above; team names, CRediT roles and final edits in progress.
+7. ~~**Final report and slides**~~ ✅ Done. The IEEE LaTeX report (wildfire_report.tex, wildfire_report.pdf) and slides with the CRediT statement are in report/
 
 ### Possible next steps
 
@@ -339,4 +339,4 @@ Add `--match-all` to the `spark-submit` command to get the old behaviour (match 
 
 ## AI use
 
-We used Claude (Anthropic) as a coding and writing assistant: for the Docker configuration, the download, matching and streaming scripts, troubleshooting, and report drafting. We ran every script ourselves, and all numbers come from our own runs.
+We used Claude (Anthropic) as a coding and writing assistant for the pipeline scripts, troubleshooting, and drafting the report. Team members ran every script on the real data and reviewed the outputs; all numbers come from those runs.
